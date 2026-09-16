@@ -2569,7 +2569,7 @@
     },
     {
       "path": "scripts/session-guard.sh",
-      "sha256": "a6e62eb6f9fba0cb872d99232ed6d3841ccb80872f90bb75d79ed7007420349e"
+      "sha256": "30f1e9720bd7bad5ccda7114d32306eb43042e49c12a7f9bfa43099cd653abbd"
     },
     {
       "path": "scripts/settings-promote.sh",
@@ -3111,6 +3111,7 @@
     "scripts/tests/day-open-world-fill-smoke.sh",
     "scripts/tests/lib/extract-update-download-batch.sh",
     "scripts/tests/session-guard-audit-validate-orz-batch-smoke.sh",
+    "scripts/tests/session-guard-fmt-open-orz-sessions-dir-smoke.sh",
     "scripts/tests/test-update-extractor-feeders.sh",
     "scripts/tests/test_adopt_governance.sh",
     "scripts/tests/test_agent_dashboard.py",
