@@ -1316,6 +1316,19 @@ if [ "$CMD" = "open" ]; then
     # WP-546) -- this is a deliberate point-patch, not partial resync.
     echo "governance_worktree: $IWE_ROOT/$GOV_REPO"
     echo "orz_file: $ORZ_BASENAME"
+    # WP-484 (16.09, peer-session 2026-09-16-18, Claude+Kimi): the point-patch
+    # above (15.09) writes governance_worktree but not orz_sessions_dir, which
+    # makes structurally_legacy false in the root copy's
+    # _repo_scope_has_publish_proof() (governance_worktree present) while
+    # orz_sessions_dir is still absent -- the sessions-repo rescue branch
+    # there requires structurally_legacy to be true, so it never fires for a
+    # semaphore this copy wrote. Without this line, close refuses this
+    # session's own ORZ file as "ambiguous between repositories" whenever the
+    # canonical checkout has diverged from origin/main. $ORZ_DIR is already
+    # resolved above (line ~1285) for the ORZ file path itself -- reuse it,
+    # not $IWE_ROOT/MC-sessions hardcoded, so this stays correct for a
+    # legacy (unmigrated) or IWE_SESSIONS_ROOT-overridden install too.
+    echo "orz_sessions_dir: $ORZ_DIR"
     # WP-484 (08.08, Kimi diagnosis + pilot report): regular sessions never
     # recorded a pid at all, so sweep_orphaned_semaphores()'s dead-pid check —
     # the only auto-detection left since age-based quarantine was retired
