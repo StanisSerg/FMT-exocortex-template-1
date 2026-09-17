@@ -1,8 +1,5 @@
 files_translated:
-- docs/LEARNING-PATH.md
-- docs/PLATFORM-COMPAT.md
-- docs/scripts-catalog.md
-- docs/skills-catalog.md
-last_run_utc: '2026-09-17T09:19:27Z'
-last_synced_sha: ffceb51b13d1e25b730c8c21aa75db8f3565b090
+- README.md
+last_run_utc: '2026-09-17T09:21:49Z'
+last_synced_sha: 8de83c7803becf46c3d0a95db5acc36a3650bba9
 schema_version: 1
