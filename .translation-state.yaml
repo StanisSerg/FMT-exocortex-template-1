@@ -1,4 +1,8 @@
-files_translated: []
-last_run_utc: '2026-09-17T08:12:43Z'
-last_synced_sha: 8e7929c0ed2b0a5d386cfe2c202f27b64397bcfc
+files_translated:
+- docs/LEARNING-PATH.md
+- docs/PLATFORM-COMPAT.md
+- docs/scripts-catalog.md
+- docs/skills-catalog.md
+last_run_utc: '2026-09-17T09:19:27Z'
+last_synced_sha: ffceb51b13d1e25b730c8c21aa75db8f3565b090
 schema_version: 1
