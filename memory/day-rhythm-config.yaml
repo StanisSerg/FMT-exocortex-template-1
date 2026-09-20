@@ -42,6 +42,11 @@ video:
   content:
     suggest_posts: true         # Suggest post ideas from transcribed videos
 
+plaud:
+  enabled: true                 # Day Open: сверка новых записей Plaud → DS-plaud/inbox/
+                                # (extension day-open.after.plaud-inbox, scripts/plaud-inbox-sync.sh)
+  days: 14                      # глубина просмотра записей в облаке
+
 content_editor:
   enabled: false                # Enable content-editor draft review at Day Open (issue #804:
                                  # секция отсутствовала в дефолтном конфиге, при отсутствии ключа
