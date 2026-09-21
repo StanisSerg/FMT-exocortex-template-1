@@ -439,41 +439,6 @@ author_diverged() {
     return 1
 }
 
-# author_release_regression FPATH PAYLOAD — bug-2026-09-17-tsekh1-release-
-# regression: author_diverged() above only catches commits НЕ ЕЩЁ дошедшие до
-# origin/$BRANCH — if the author's fix is already merged into main, that
-# check reports "no divergence" even though the release channel is about to
-# overwrite the file with an OLDER release snapshot (release_tag can trail
-# main by any number of unreleased commits). Live incident: an author's fix
-# landed on origin/main, update.sh (release channel, default) applied the
-# release payload anyway and silently reverted it — noticed only by manually
-# re-reading the file, not by any warning.
-#
-# The check needs no reference to whichever ref the release payload actually
-# came from: PAYLOAD is already the downloaded release content
-# ($TMPDIR_UPDATE/files/$f), so comparing it directly against origin/$BRANCH
-# HEAD answers the only question that matters — "does applying this payload
-# move the file away from what main already has?". Fires only when the local
-# file already equals origin/$BRANCH HEAD (author_diverged already covers
-# "has local edits") but the payload does not match that same HEAD. Reuses
-# the fetch done by author_diverged() via $_AUTHOR_FETCH_DONE — no extra
-# network round-trip.
-author_release_regression() {
-    local fpath="$1" payload="$2" head_sha local_sha payload_sha
-    [ "$UPDATE_CHANNEL" = "release" ] || return 1
-    is_author_mode || return 1
-    git -C "$SCRIPT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
-    if [ "$_AUTHOR_FETCH_DONE" = false ]; then
-        git -C "$SCRIPT_DIR" fetch --quiet origin "$BRANCH" 2>/dev/null || true
-        _AUTHOR_FETCH_DONE=true
-    fi
-    head_sha=$(git -C "$SCRIPT_DIR" rev-parse "origin/$BRANCH:$fpath" 2>/dev/null) || return 1
-    local_sha=$(git -C "$SCRIPT_DIR" hash-object "$SCRIPT_DIR/$fpath" 2>/dev/null) || return 1
-    [ "$local_sha" = "$head_sha" ] || return 1
-    payload_sha=$(git -C "$SCRIPT_DIR" hash-object "$payload" 2>/dev/null) || return 1
-    [ "$payload_sha" != "$head_sha" ]
-}
-
 # author_mode skip classification (WP-7 F71 stage A, peer-session 2026-08-14-05):
 # tell the author WHY each file was skipped (authored edits vs merely stale vs
 # undecidable) instead of one generic warning per file — Konstantin's live
@@ -672,7 +637,6 @@ fi
 WORKSPACE_DIR="$(dirname "$SCRIPT_DIR")"
 RULES_BACKUP_RUN=""
 RULES_SAFE_TO_UPDATE="|"
-MEMORY_BACKUP_RUN=""
 UPDATE_INCOMPLETE_MARKER="$SCRIPT_DIR/.update-incomplete"
 UPDATE_TRANSACTION_STARTED=false
 
@@ -1878,25 +1842,6 @@ backup_rule_before_overwrite() {
     echo "  ↳ backup: $dst → $backup"
 }
 
-# issue #847: memory/* stale-repair (see repair_pass() below) used to overwrite
-# a workspace-local memory file with the template's version whenever hashes
-# differed, with no backup — unlike .claude/rules/* above, which already has
-# this via backup_rule_before_overwrite(). memory/* files are owner:platform
-# by convention but some (e.g. navigation.md) are filled in per-installation,
-# so the same safety net applies here under its own backup dir.
-backup_memory_file_before_overwrite() {
-    local fpath="$1" dst="$2" backup
-    case "$fpath" in memory/*.md|memory/*.yaml|memory/*.yml) ;; *) return 0 ;; esac
-    [ -f "$dst" ] || return 0
-    if [ -z "$MEMORY_BACKUP_RUN" ]; then
-        MEMORY_BACKUP_RUN="$WORKSPACE_DIR/.backups/memory-pre-update/$(date -u +%Y%m%dT%H%M%SZ)-$$"
-    fi
-    backup="$MEMORY_BACKUP_RUN/${fpath#memory/}"
-    mkdir -p "$(dirname "$backup")"
-    cp "$dst" "$backup"
-    echo "  ↳ backup: $dst → $backup"
-}
-
 copy_platform_file_preserving_user_space() {
     local src="$1" dst="$2" fpath="$3" user_section=""
     if [ -f "$dst" ]; then
@@ -2556,9 +2501,8 @@ for entry in data.get('files', []):
                         # молча затирал бы её версией из SCRIPT_DIR.
                         echo "  ⚠ $fpath — author_mode: memory/ рабочая копия не тронута. Сверь: diff \"$SCRIPT_DIR/$fpath\" \"$mem_dst\""
                     elif [ -r "$mem_dst" ] && [ "$(hash_file "$SCRIPT_DIR/$fpath")" != "$(hash_file "$mem_dst")" ]; then
-                        backup_memory_file_before_overwrite "$fpath" "$mem_dst"
                         cp "$SCRIPT_DIR/$fpath" "$mem_dst"
-                        echo "  ⟲ $fpath → memory/ (stale repair, прежняя версия сохранена в .backups/memory-pre-update/)"
+                        echo "  ⟲ $fpath → memory/ (stale repair)"
                         REPAIRED=$((REPAIRED + 1))
                     fi
                 fi
@@ -2641,14 +2585,6 @@ sync_workspace_claude_md() {
         # 3-way merge for workspace CLAUDE.md (same logic as repo copy)
         WS_BASE="$WORKSPACE_DIR/.claude.md.base"
         WS_CURRENT="$WORKSPACE_DIR/CLAUDE.md"
-        # issue #846: records the WS_NEW content at the moment a conflict was
-        # last written to $WS_CURRENT. $WS_BASE is deliberately never advanced
-        # on conflict (issue #711), so once the pilot removes the markers by
-        # hand, the branches below used to re-run the exact same 3-way merge
-        # against the still-stale base and reproduce the exact same conflict
-        # on every run. This sidecar lets that specific case be recognized
-        # and the pilot's resolution accepted, instead of merged again.
-        WS_CONFLICT_PENDING="$WORKSPACE_DIR/.claude.md.conflict-pending"
 
         # issue #711: a previous run left unresolved <<<<<<< markers in
         # $WS_CURRENT (pilot hasn't touched the file yet). Running
@@ -2660,21 +2596,7 @@ sync_workspace_claude_md() {
             echo "  ~ $WS_CURRENT (неразрешённый конфликт с прошлого запуска — сначала разрешите маркеры вручную)"
             CLAUDE_CONFLICT_DETECTED=true
             CLAUDE_CONFLICT_FILES+=("$WS_CURRENT")
-        elif [ -f "$WS_CONFLICT_PENDING" ] && [ -f "$WS_BASE" ] && diff -q "$WS_CONFLICT_PENDING" "$WS_NEW" >/dev/null 2>&1; then
-            # Markers are gone and the upstream CLAUDE.md hasn't moved since
-            # the conflict that produced them — the pilot resolved it by hand.
-            # Accept their file as the new ground truth instead of re-merging
-            # it against the stale base (which is exactly what reproduced the
-            # same conflict every run).
-            cp "$WS_BASE" "$WS_BASE.bak-$(date -u +%Y%m%dT%H%M%SZ)"
-            cp "$WS_NEW" "$WS_BASE"
-            rm -f "$WS_CONFLICT_PENDING"
-            echo "  ✓ $WS_CURRENT принят как разрешённый вручную (база обновлена, прежняя сохранена рядом)"
         elif [ -f "$WS_BASE" ] && [ -f "$WS_CURRENT" ] && command -v git >/dev/null 2>&1; then
-            # Either the upstream template moved on since any earlier conflict
-            # (a stale pending record no longer applies), or this is the very
-            # first merge attempt — either way, a fresh merge decides next.
-            rm -f "$WS_CONFLICT_PENDING"
             WS_MERGE_TMP="$TMPDIR_UPDATE/ws-claude-merge.md"
             cp "$WS_CURRENT" "$WS_MERGE_TMP"
             if git merge-file -p "$WS_MERGE_TMP" "$WS_BASE" "$WS_NEW" > "$TMPDIR_UPDATE/ws-claude-merged.md" 2>/dev/null; then
@@ -2703,10 +2625,6 @@ sync_workspace_claude_md() {
                     # <<<<<<< markers, so update.sh reported "Всё актуально" on a corrupt
                     # file. Base now advances only once the markers are gone (see the
                     # pre-check above, which takes over on the next run).
-                    # issue #846: record $WS_NEW so a future run whose markers are gone
-                    # but whose $WS_NEW is unchanged can recognize a hand-resolved file
-                    # (see $WS_CONFLICT_PENDING branch above) instead of re-merging it.
-                    cp "$WS_NEW" "$WS_CONFLICT_PENDING"
                     echo "  ~ $WS_CURRENT ($WS_CONFLICTS конфликтов — разрешите вручную)"
                     echo "    Конфликты обозначены <<<<<<< / ======= / >>>>>>>"
                     CLAUDE_CONFLICT_DETECTED=true
@@ -3645,11 +3563,6 @@ for f in "${UPDATED_FILES[@]}"; do
     if author_diverged "$f"; then
         echo "  ⚠ $f — author_mode: несмёрженные правки, файл не тронут."
         echo "    Сверь: diff \"$TMPDIR_UPDATE/files/$f\" \"$SCRIPT_DIR/$f\""
-        AUTHOR_SKIPPED=$((AUTHOR_SKIPPED + 1))
-        continue
-    elif author_release_regression "$f" "$TMPDIR_UPDATE/files/$f"; then
-        echo "  ⚠ $f — author_mode: локальная копия уже равна main, но release-канал старее (фикс влит, релиза под него ещё не было) — файл не тронут."
-        echo "    Хотите намеренно синхронизироваться с релизом — запустите: IWE_UPDATE_CHANNEL=main bash update.sh"
         AUTHOR_SKIPPED=$((AUTHOR_SKIPPED + 1))
         continue
     fi

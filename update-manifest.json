@@ -149,7 +149,7 @@
     },
     {
       "path": ".claude/hooks/secret-bypass-analyzer.py",
-      "sha256": "f744c49bf754698ac2d252319bab38e1a7f88eb06509b920f9a1c708c5a0109c"
+      "sha256": "2c02530b2c6df105016c02a4bb6fdefe4a4d4dbd424c943b58a85283febf8042"
     },
     {
       "path": ".claude/hooks/secret-bypass-lib.sh",
@@ -198,10 +198,6 @@
     {
       "path": ".claude/hooks/tests/test-protocol-artifact-validate-mandatory-fail-closed.sh",
       "sha256": "6298b52f77be40dca698050a95fee94cca66cf4a9e64f119acde03b18d76f765"
-    },
-    {
-      "path": ".claude/hooks/tests/test-secret-leak-block-heredoc-in-dollar-paren.sh",
-      "sha256": "f1c9f00430a7d44571fbc585e386806bd7934db499e976075e25c9ec96531833"
     },
     {
       "path": ".claude/hooks/tests/test-secret-leak-block-unparsed-input.sh",
@@ -825,7 +821,7 @@
     },
     {
       "path": "CLAUDE.md",
-      "sha256": "5ebc30c328ee52c487505a11c31d855055bfd1c25c1118a9611d58f810377a3b"
+      "sha256": "e8f9cb5c4d4e60d232f35b8b2a2f17af71303d8857ce92330ba55caa15d0ce4d"
     },
     {
       "path": "ONTOLOGY.md",
@@ -905,7 +901,7 @@
     },
     {
       "path": "docs/RELEASE-PROCESS.md",
-      "sha256": "9b39c61c4b4d70eb5f9a8a8993fc19be99b246ffdd2e3f45c5746a5192d44a98"
+      "sha256": "c920f1dc8a269623a6e395f5839f90fb92b64272f70450acf5fe972b39846fc3"
     },
     {
       "path": "docs/RESIDENCY-GATE-USAGE.md",
@@ -1701,7 +1697,7 @@
     },
     {
       "path": "roles/extractor/scripts/extractor.sh",
-      "sha256": "594a9739e1cde6c04837d3f319f8fe6d14af66927dd68f3404681a074a8bbd04"
+      "sha256": "0ca302f1368bc435e5bb20229f7d66265977999ba2542c16bf6e860a3ab8ee73"
     },
     {
       "path": "roles/extractor/scripts/launchd/com.extractor.inbox-check.plist",
@@ -2181,7 +2177,7 @@
     },
     {
       "path": "scripts/create-wp.sh",
-      "sha256": "1398ca5ad93f04d36e120024b9218cfe0bdb0cd8c1a20c660db899b65a8b73ec"
+      "sha256": "b63df0f808a3be1c4ed2e807a5563e8b0364510310c902feff680c964ea909ab"
     },
     {
       "path": "scripts/day-close-lock.sh",
@@ -3045,7 +3041,7 @@
     },
     {
       "path": "setup/build-runtime.sh",
-      "sha256": "d28e87a10d09ca8ed7c9e9775fabb81689e7a51d33817f4842c064520389919e"
+      "sha256": "c858557329da9e9b8d1e665ab9f69994b2ebdc1da52cc7e0f014db633f32c83b"
     },
     {
       "path": "setup/install-iwe-paths.sh",
@@ -3081,7 +3077,7 @@
     },
     {
       "path": "update.sh",
-      "sha256": "6856fd91b256076e90e1c164a373836498ea5f4d5b6f543e1e4c842d360673b3"
+      "sha256": "088ee3e7b41996ec9dc662b8d30168cf96cb01bb315601d37b6d76209bed429b"
     }
   ],
   "excluded_paths": [
@@ -3147,7 +3143,6 @@
     "scripts/tests/test_issue_713_registry_status.sh",
     "scripts/tests/test_issue_729_strategy_day.sh",
     "scripts/tests/test_issue_810_scan_selfexcl.sh",
-    "scripts/tests/test_issue_851_cyrillic_slug.sh",
     "scripts/tests/test_issue_extensions_dir_missing.sh",
     "scripts/tests/test_issue_python_resolver_contract.sh",
     "scripts/tests/test_manifest_coverage_local.py",
@@ -3307,14 +3302,6 @@
       "path": "scripts/tests/test_session_guard_unknown_flag.sh",
       "reason": "moved to excluded_paths[] (scripts/tests/ blanket pattern) after being in files[] by oversight — WP-7 Ф92",
       "excluded_confirmed": true
-    },
-    {
-      "path": ".claude/skills/lesson-close/SKILL.md",
-      "reason": "removed 2026-09-17 (ffceb51, issue #778): shipped in the general template without its counterpart /lesson (author-only skill). personal-guide-start already distributes both /lesson and /lesson-close together when a pilot starts that flow -- the standalone shipment was redundant."
-    },
-    {
-      "path": "scripts/lesson-close.sh",
-      "reason": "removed 2026-09-17 (ffceb51, issue #778): companion script to the removed lesson-close skill, same reason."
     }
   ]
 }
